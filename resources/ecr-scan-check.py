@@ -6,7 +6,6 @@ import json
 import os
 import sys
 import time
-from botocore import exceptions as botoexcept
 from json2html import *
 
 def logoutput(level, message):
