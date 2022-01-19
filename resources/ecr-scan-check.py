@@ -103,7 +103,7 @@ def generate_reporturl(ecr_scanfindings, region):
   return report_url
 
 
-def generate_slackjson(ecr_imagedata, vulnerabilities, report_url):
+def generate_slackjson(ecr_imagedata, vulnerabilities, report_url, report_dir):
   if vulnerabilities:
     colour = "#FF0000"
     heading = "ECR vulnerability scan failure"
@@ -142,11 +142,10 @@ def generate_slackjson(ecr_imagedata, vulnerabilities, report_url):
   }
 ]
 
-  result_dir = "./scan-report"
-  if not os.path.exists(result_dir):
-    os.mkdir(result_dir)
+  if not os.path.exists(report_dir):
+    os.mkdir(report_dir)
 
-  json_path = result_dir + "/report.json"
+  json_path = "./" + report_dir + "/report.json"
   with open(json_path, 'w', encoding='utf-8') as result_file:
     json.dump(slack_json, result_file, ensure_ascii=False, indent=4)
 
@@ -171,6 +170,12 @@ if __name__ == "__main__":
   else:
     severities = get_severities("ANY")
 
+  # Set the report output directory
+  if os.environ.get("REPORT_DIR"):
+    report_dir = os.environ.get("REPORT_DIR")
+  else:
+    report_dir = "scan-report"
+
   logoutput("Info", "Image name: " + args.imagerepo + ", Tag: " + args.imagetag)
 
   # Initialise the boto3 session and return an ECR client
@@ -194,7 +199,7 @@ if __name__ == "__main__":
   report_url = generate_reporturl(ecr_imagedata, os.environ.get("AWS_REGION"))
 
   # Build and output the JSON for the Slack message
-  generate_slackjson(ecr_imagedata, vulnerabilities, report_url)
+  generate_slackjson(ecr_imagedata, vulnerabilities, report_url, report_dir)
 
   if vulnerabilities:
     logoutput("Error", "Vulnerabilities found.")
