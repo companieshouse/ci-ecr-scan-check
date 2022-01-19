@@ -1,0 +1,1 @@
+# ci-ecr-scan-check
