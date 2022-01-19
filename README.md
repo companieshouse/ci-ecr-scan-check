@@ -26,13 +26,13 @@ The script requires the following positional parameters to passed.
 
 ## Usage Examples
 
-####Basic usage
+###Basic usage
 `docker run --rm <repository>/ci-ecr-scan-check:latest ecr-scan-check.py <image_name> <image_tag>`
 
-####Defining the minimum severity
+###Defining the minimum severity
 `docker run --rm -e MIN_SEVERITY=HIGH <repository>/ci-ecr-scan-check:latest ecr-scan-check.py <image_name> <image_tag>`
 
-####Use in a pipeline
+###Use in a pipeline
 ```
 - name: my-image-scan
   plan:
