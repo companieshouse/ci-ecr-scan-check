@@ -22,7 +22,7 @@ The script requires the following positional parameters to passed.
 | Parameter      | Description                                              |
 | -------------- | -------------------------------------------------------- |
 | `<image_name>` | The name of the container image to query the ECR API for |
-| `<image_tag>`  | The specific image tag to filter the query
+| `<image_tag>`  | The specific image tag to filter the query               |
 
 ## Usage Examples
 
