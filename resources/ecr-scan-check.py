@@ -35,7 +35,7 @@ def get_severities(min_severity):
     return selected_severities
 
 
-def ecr_opensession():
+def ecr_open_session():
     logoutput("Info", "Logging in to ECR")
     try:
         session = boto3.Session(
@@ -52,7 +52,7 @@ def ecr_opensession():
     return ecr_client
 
 
-def ecr_describescanfindings(ecr_client, imagerepo, imagetag):
+def ecr_describe_scan_findings(ecr_client, imagerepo, imagetag):
     logoutput("Info", "Getting scan results...")
     try:
         response = ecr_client.describe_image_scan_findings(
@@ -77,7 +77,7 @@ def ecr_describescanfindings(ecr_client, imagerepo, imagetag):
     return response
 
 
-def parse_scanresults(response, severities):
+def parse_scan_results(response, severities):
     logoutput("Info", "Severities included: " + ",".join(severities))
     vulnerabilities = False
     if len(response["imageScanFindings"]["findingSeverityCounts"]) > 0:
@@ -90,7 +90,7 @@ def parse_scanresults(response, severities):
     return vulnerabilities
 
 
-def generate_reporturl(ecr_scanfindings, region):
+def generate_report_url(ecr_scanfindings, region):
     report_url = "https://{region}.console.aws.amazon.com/ecr/repositories/private/{registry}/{repository}/image/{digest}/scan-results/?region={region}".format(
         region=region,
         registry=ecr_scanfindings["registryId"],
@@ -101,7 +101,7 @@ def generate_reporturl(ecr_scanfindings, region):
     return report_url
 
 
-def generate_slackjson(ecr_imagedata, vulnerabilities, report_url, report_dir):
+def generate_slack_json(ecr_imagedata, vulnerabilities, report_url, report_dir):
     if vulnerabilities:
         colour = "#FF0000"
         heading = "ECR vulnerability scan failure"
@@ -174,16 +174,16 @@ if __name__ == "__main__":
     logoutput("Info", "Image name: " + args.imagerepo + ", Tag: " + args.imagetag)
 
     # Initialise the boto3 session and return an ECR client
-    ecr_client = ecr_opensession()
+    ecr_client = ecr_open_session()
 
     # Query the ECR API to return the image scan findings
-    ecr_imagedata = ecr_describescanfindings(ecr_client, args.imagerepo, args.imagetag)
+    ecr_imagedata = ecr_describe_scan_findings(ecr_client, args.imagerepo, args.imagetag)
 
     # Wait and try again if the scan status is not COMPLETE
     while ecr_imagedata["imageScanStatus"]["status"] != "COMPLETE":
         logoutput("Info", "Waiting for image scan to complete...")
         time.sleep(5)
-        ecr_imagedata = ecr_describescanfindings(
+        ecr_imagedata = ecr_describe_scan_findings(
             ecr_client, args.imagerepo, args.imagetag
         )
 
@@ -192,13 +192,13 @@ if __name__ == "__main__":
     )
 
     # Parse the scan results for the appropriate severities
-    vulnerabilities = parse_scanresults(ecr_imagedata, severities)
+    vulnerabilities = parse_scan_results(ecr_imagedata, severities)
 
     # Build the URL to view the scan report
-    report_url = generate_reporturl(ecr_imagedata, os.environ.get("AWS_REGION"))
+    report_url = generate_report_url(ecr_imagedata, os.environ.get("AWS_REGION"))
 
     # Build and output the JSON for the Slack message
-    generate_slackjson(ecr_imagedata, vulnerabilities, report_url, report_dir)
+    generate_slack_json(ecr_imagedata, vulnerabilities, report_url, report_dir)
 
     if vulnerabilities:
         logoutput("Error", "Vulnerabilities found.")
