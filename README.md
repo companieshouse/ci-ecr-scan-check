@@ -13,7 +13,6 @@ The script utilises the following environment variables.
 | AWS_SECRET_ACCESS_KEY | Yes      | -             | AWS auth secret access key                                          |
 | AWS_REGION            | Yes      | -             | AWS region to connect to                                            |
 | MIN_SEVERITY          | No       | `ANY`         | Sets the minimum vulnerability severity level to indicate a failure |
-| REPORT_DIR            | No       | `scan-report` | The directory that the JSON-formatted report will be wirtten to     |
 
 ## Parameters
 
