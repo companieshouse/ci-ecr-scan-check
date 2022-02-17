@@ -7,12 +7,13 @@ Following a scan, a JSON-formatted template is written to disk that can be used 
 
 The script utilises the following environment variables.
 
-| Variable Name         | Required | Default       | Description                                                         |
-| --------------------- | -------- | ------------- | ------------------------------------------------------------------- |
-| AWS_ACCESS_KEY_ID     | Yes      | -             | AWS auth access key ID                                              |
-| AWS_SECRET_ACCESS_KEY | Yes      | -             | AWS auth secret access key                                          |
-| AWS_REGION            | Yes      | -             | AWS region to connect to                                            |
-| MIN_SEVERITY          | No       | `ANY`         | Sets the minimum vulnerability severity level to indicate a failure |
+| Variable Name         | Required | Default       | Description                                                                 |
+| --------------------- | -------- | ------------- | --------------------------------------------------------------------------- |
+| AWS_ACCESS_KEY_ID     | Yes      | -             | AWS auth access key ID                                                      |
+| AWS_SECRET_ACCESS_KEY | Yes      | -             | AWS auth secret access key                                                  |
+| AWS_REGION            | Yes      | -             | AWS region to connect to                                                    |
+| MIN_SEVERITY          | No       | `ALL`         | Sets the minimum vulnerability severity level to indicate a failure         |
+| MAX_WAIT              | No       | `120`         | Sets how long, in seconds, to wait for ECR scan results to become available |
 
 ## Parameters
 
@@ -30,6 +31,9 @@ Basic usage
 
 Defining the minimum severity
 `docker run --rm -e MIN_SEVERITY=HIGH <repository>/ci-ecr-scan-check:latest ecr-scan-check.py <image_name> <image_tag>`
+
+Defining the maximum wait time
+`docker run --rm -e MAX_WAIT=300 <repository>/ci-ecr-scan-check:latest ecr-scan-check.py <image_name> <image_tag>`
 
 Use in a pipeline
 ```
