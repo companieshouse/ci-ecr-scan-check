@@ -68,7 +68,7 @@ def ecr_open_session():
         ecr_client = session.client("ecr")
 
     except session.exceptions.UnauthorizedException as err:
-        logoutput("Error", "Invalid SSO credentials")
+        logoutput("Error", "Invalid AWS credentials")
         sys.exit(1)
 
     return ecr_client
