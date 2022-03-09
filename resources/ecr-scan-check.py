@@ -5,6 +5,7 @@ import botocore
 import boto3
 import json
 import os
+import requests
 import sys
 import time
 
@@ -27,21 +28,37 @@ def log_output(level, message):
     string = "{}{}:{} {}".format(colours[level], level, colours["end"], message)
     print(string)
 
+
 def check_environment_variables():
-    required_vars = [
+    required_aws_vars = [
         'AWS_ACCESS_KEY_ID',
         'AWS_SECRET_ACCESS_KEY',
         'AWS_REGION',
     ]
 
-    missing_vars = []
-    for env_var in required_vars:
+    missing_aws_vars = []
+    for env_var in required_aws_vars:
         if os.getenv(env_var) is None:
-            missing_vars.append(env_var)
+            missing_aws_vars.append(env_var)
 
-    if missing_vars:
-        log_output("Error", f"Mandatory environment variable(s) undefined: {', '.join(missing_vars)}")
+    if missing_aws_vars:
+        log_output("Error", f"Mandatory AWS environment variable(s) undefined: {', '.join(missing_aws_vars)}")
         sys.exit(1)
+
+    required_slack_vars = [
+        'SLACK_CHANNEL',
+        'SLACK_WEBHOOK',
+    ]
+
+    if not os.getenv("SLACK_DISABLE"):
+        missing_slack_vars = []
+        for env_var in required_slack_vars:
+            if os.getenv(env_var) is None:
+                missing_slack_vars.append(env_var)
+    
+        if missing_slack_vars:
+            log_output("Error", f"Mandatory Slack environment variable(s) undefined: {', '.join(missing_slack_vars)}")
+            sys.exit(1)
 
 
 def parse_arguments():
@@ -51,11 +68,13 @@ def parse_arguments():
 
     return parser.parse_args()
 
+
 def get_severities(level):
     if level is None:
         return severities
     else:
         return severities[severities.index(level):]
+
 
 def ecr_open_session():
     log_output("Info", "Opening AWS session...")
@@ -130,7 +149,10 @@ def generate_report_url(ecr_scanfindings, region):
     return report_url
 
 
-def generate_slack_json(ecr_imagedata, vulnerabilities, report_url, image_name, image_tag):
+def send_slack_report(vulnerabilities, report_url, image_name, image_tag):
+    slack_channel = os.getenv("SLACK_CHANNEL")
+    slack_webhook = os.getenv("SLACK_WEBHOOK")
+
     if vulnerabilities:
         colour = "#FF0000"
         heading = "ECR vulnerability scan failure"
@@ -140,34 +162,38 @@ def generate_slack_json(ecr_imagedata, vulnerabilities, report_url, image_name, 
         heading = "Successful ECR vulnerability scan"
         result = "No vulnerabilities"
 
-    slack_json = [
-        {
-            "fallback": heading,
-            "pretext": heading
-            + " for *<$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_PIPELINE_NAME>*",
-            "fields": [
-                {"title": "Image Name", "value": image_name, "short": "true"},
-                {"title": "Image Tag", "value": image_tag, "short": "true"},
-                {
-                    "title": "Scan Result:",
-                    "value": "<" + report_url + "|" + result + ">",
-                    "short": "false",
-                },
-            ],
-            "color": colour,
-            "footer": "$ATC_EXTERNAL_URL",
-        }
-    ]
+    slack_payload = {
+        "channel": slack_channel,
+        "attachments": [
+            {
+                "fallback": heading,
+                "pretext": heading,
+                "fields": [
+                    {"title": "Image Name", "value": image_name, "short": "true"},
+                    {"title": "Image Tag", "value": image_tag, "short": "true"},
+                    {
+                        "title": "Scan Result:",
+                        "value": "<" + report_url + "|" + result + ">",
+                        "short": "false",
+                    },
+                ],
+                "color": colour,
+            }
+        ]
+    }
 
-    report_dir = "scan-report"
-    if not os.path.exists(report_dir):
-        os.mkdir(report_dir)
+    try:
+        requests.post(
+            slack_webhook,
+            json.dumps(slack_payload),
+            timeout=5
+        )
 
-    json_path = f"./{report_dir}/report.json"
-    with open(json_path, "w", encoding="utf-8") as result_file:
-        json.dump(slack_json, result_file, ensure_ascii=False, indent=4)
+    except requests.exceptions.Timeout as err:
+        log_output("Error", "Unable to send Slack report: Connection timed-out")
 
-    result_file.close()
+    except requests.exceptions.ConnectionError as err:
+        log_output("Error", "Unable to send Slack report: Connection error")
 
 
 if __name__ == "__main__":
@@ -220,8 +246,9 @@ if __name__ == "__main__":
     # Build the URL to view the scan report
     report_url = generate_report_url(ecr_imagedata, os.environ.get("AWS_REGION"))
 
-    # Build and output the JSON for the Slack message
-    generate_slack_json(ecr_imagedata, vulnerabilities, report_url, args.imagerepo, args.imagetag)
+    # Send a slack report if not disabled
+    if os.environ.get("SLACK_DISABLE") is None:
+        send_slack_report(vulnerabilities, report_url, args.imagerepo, args.imagetag)
 
     if vulnerabilities:
         log_output("Error", "Vulnerabilities found.")
