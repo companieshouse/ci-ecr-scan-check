@@ -14,6 +14,9 @@ The script utilises the following environment variables.
 | AWS_REGION            | Yes      | -             | AWS region to connect to                                                    |
 | MIN_SEVERITY          | No       | `ALL`         | Sets the minimum vulnerability severity level to indicate a failure         |
 | MAX_WAIT              | No       | `120`         | Sets how long, in seconds, to wait for ECR scan results to become available |
+| SLACK_DISABLE         | No       | -             | If set and non-empty, will disable sending of Slack reports                 |
+| SLACK_CHANNEL         | Yes      | -             | Slack channel to send scan reports to                                       |
+| SLACK_WEBHOOK         | Yes      | -             | Slack webhook URL used to send the scan report                              |
 
 ## Parameters
 
@@ -59,6 +62,8 @@ Use in a pipeline
         AWS_REGION: eu-west-2
         IMAGE_NAME: <image_name>
         IMAGE_TAG: <image_tag>
+        SLACK_CHANNEL: <slack_channel>
+        SLACK_WEBHOOK: <slack_webhook>
 
       run:
         path: bash
@@ -67,9 +72,39 @@ Use in a pipeline
         - |
           ecr-scan-check.py ${IMAGE_NAME} ${IMAGE_TAG}
 
-  ensure:
-    put: notify-slack
-    params:
-      attachments_file: scan-report/report.json
-      channel: <slack_channel>
+```
+
+With Slack-based reporting of scan results disabled
+```
+- name: my-image-scan
+  plan:
+  - task: get-vulnerability-scan
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          aws_access_key_id: ((aws-access-key-id))
+          aws_secret_access_key: ((aws-secret-access-key))
+          repository: ((repository))/ci-ecr-scan-check
+          tag: latest
+
+      outputs:
+        - name: scan-report
+
+      params:
+        AWS_ACCESS_KEY_ID: ((aws-access-key-id))
+        AWS_SECRET_ACCESS_KEY: ((aws-secret-access-key))
+        AWS_REGION: eu-west-2
+        IMAGE_NAME: <image_name>
+        IMAGE_TAG: <image_tag>
+        SLACK_DISABLE: true
+
+      run:
+        path: bash
+        args:
+        - -ec
+        - |
+          ecr-scan-check.py ${IMAGE_NAME} ${IMAGE_TAG}
+
 ```
