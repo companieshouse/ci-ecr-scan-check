@@ -14,8 +14,7 @@ The script utilises the following environment variables.
 | AWS_REGION            | Yes      | -             | AWS region to connect to                                                    |
 | MIN_SEVERITY          | No       | `ALL`         | Sets the minimum vulnerability severity level to indicate a failure         |
 | MAX_WAIT              | No       | `120`         | Sets how long, in seconds, to wait for ECR scan results to become available |
-| SLACK_DISABLE         | No       | -             | If set and non-empty, will disable sending of Slack reports                 |
-| SLACK_CHANNEL         | Yes      | -             | Slack channel to send scan reports to                                       |
+| SLACK_CHANNEL         | Yes      | -             | Slack channel to send scan reports to. If not set, reports will be disabled |
 | SLACK_WEBHOOK         | Yes      | -             | Slack webhook URL used to send the scan report                              |
 
 ## Parameters
@@ -63,7 +62,6 @@ Use in a pipeline
         IMAGE_NAME: <image_name>
         IMAGE_TAG: <image_tag>
         SLACK_CHANNEL: <slack_channel>
-        SLACK_WEBHOOK: <slack_webhook>
 
       run:
         path: bash
@@ -98,7 +96,6 @@ With Slack-based reporting of scan results disabled
         AWS_REGION: eu-west-2
         IMAGE_NAME: <image_name>
         IMAGE_TAG: <image_tag>
-        SLACK_DISABLE: true
 
       run:
         path: bash

@@ -46,11 +46,10 @@ def check_environment_variables():
         sys.exit(1)
 
     required_slack_vars = [
-        'SLACK_CHANNEL',
         'SLACK_WEBHOOK',
     ]
 
-    if not os.getenv("SLACK_DISABLE"):
+    if os.getenv("SLACK_CHANNEL"):
         missing_slack_vars = []
         for env_var in required_slack_vars:
             if os.getenv(env_var) is None:
@@ -247,8 +246,11 @@ if __name__ == "__main__":
     report_url = generate_report_url(ecr_imagedata, os.environ.get("AWS_REGION"))
 
     # Send a slack report if not disabled
-    if os.environ.get("SLACK_DISABLE") is None:
+    if os.environ.get("SLACK_CHANNEL"):
+        log_output("Info", "Sending scan report to Slack.")
         send_slack_report(vulnerabilities, report_url, args.imagerepo, args.imagetag)
+    else:
+        log_output("Info", "Scan reporting disabled.")
 
     if vulnerabilities:
         log_output("Error", "Vulnerabilities found.")
