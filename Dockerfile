@@ -26,7 +26,7 @@ RUN ./configure --enable-optimizations && \
 
 WORKDIR /opt
 RUN rm -rf Python-${PYTHON_VERSION}/ Python-*.tgz && \
-    PYTHON_MAJMIN="$(cut -d '.' -f 1 <<< ${PYTHON_VERSION})"."$(cut -d '.' -f 2 <<< \"${PYTHON_VERSION}\")" && \
+    PYTHON_MAJMIN="$(cut -d '.' -f 1 <<< ${PYTHON_VERSION})"."$(cut -d '.' -f 2 <<< ${PYTHON_VERSION})" && \
     ln -s "/usr/local/bin/python${PYTHON_MAJMIN}" /usr/local/bin/python3 && \
     ln -s "/usr/local/bin/pip${PYTHON_MAJMIN}" /usr/local/bin/pip3
 
