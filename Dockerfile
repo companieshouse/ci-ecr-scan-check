@@ -33,9 +33,7 @@ FROM amazonlinux:2
 RUN yum -y update && \
     yum clean all
 
-COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /usr/local/lib /usr/local/lib
-COPY --from=builder /usr/local/include /usr/local/include
+COPY --from=builder /usr/local /usr/local
 
 COPY resources/ecr-scan-check.py /usr/local/bin/ecr-scan-check.py
 COPY resources/requirements.txt /root/requirements.txt
